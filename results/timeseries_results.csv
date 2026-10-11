@@ -1,0 +1,6 @@
+Model,MAE,RMSE
+Moving Average (7d),498.87,690.7
+Moving Average (14d),495.61,701.01
+Moving Average (3d),529.56,720.15
+Simple Exp Smoothing,586.79,808.08
+Holt-Winters,813.22,1050.97

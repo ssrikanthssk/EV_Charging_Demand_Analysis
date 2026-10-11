@@ -1,0 +1,33 @@
+,importance
+Charger_AvgPastDemand,1033
+User_AvgPastDemand,882
+User_PrevSessions,818
+Charger_PrevSessions,795
+Hour,627
+Day,443
+Month,256
+DayOfWeek,220
+ChargerType_0,97
+ChargerCompany_0,75
+Location_apartment,75
+Location_resort,75
+TimeOfDay_Night,74
+Location_public area,68
+TimeOfDay_Evening,60
+Location_company,55
+Location_hotel,50
+Location_market,50
+TimeOfDay_Morning,48
+TimeOfDay_Afternoon,42
+Location_camping,36
+Location_public institution,32
+Location_restaurant,29
+Location_public parking lot,21
+Location_golf,16
+Location_accommodation,10
+Location_bus garage,7
+Location_sightseeing,5
+ChargerType_1,1
+ChargerCompany_1,0
+IsWeekend,0
+IsNewUser,0
