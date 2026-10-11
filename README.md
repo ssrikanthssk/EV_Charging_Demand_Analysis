@@ -1,6 +1,6 @@
 # EV Charging Demand Prediction and Usage Pattern Analysis
 
- capstone project (Domain: Electric Vehicles and Sustainable Transportation).
+GUVI x HCL capstone project (Domain: Electric Vehicles and Sustainable Transportation).
 
 An end-to-end machine learning project that analyzes EV charging station usage and predicts charging demand. It covers data cleaning, EDA, feature engineering, regression, classification, time series forecasting, model explainability (Feature Importance, SHAP, LIME) and an interactive Streamlit dashboard.
 
@@ -12,7 +12,7 @@ An end-to-end machine learning project that analyzes EV charging station usage a
 2. [Business Use Cases](#2-business-use-cases)
 3. [Dataset](#3-dataset)
 4. [Project Structure](#4-project-structure)
-5. [Workflow](#5-workflow)
+5. [Architecture & Workflow](#5-architecture--workflow)
 6. [Step-by-Step Methodology](#6-step-by-step-methodology)
 7. [Results](#7-results)
 8. [Key Findings](#8-key-findings)
@@ -24,6 +24,7 @@ An end-to-end machine learning project that analyzes EV charging station usage a
 14. [Future Improvements](#14-future-improvements)
 15. [Tech Stack](#15-tech-stack)
 16. [Author](#16-author)
+17. [License](#17-license)
 
 ---
 
@@ -55,7 +56,7 @@ The final output is a Streamlit dashboard that combines the analysis, prediction
 ## 3. Dataset
 
 - **File:** `ChargingRecords.csv`
-- **Source:** publicly available EV charging transaction dataset 
+- **Source:** publicly available EV charging transaction dataset
 - **Size:** 72,856 charging sessions, 13 columns
 - **Period:** 30 Sep 2021 to 30 Sep 2022 (366 days)
 
@@ -110,9 +111,9 @@ EV_Charging_Demand_Analysis/
 ├── models/
 │   ├── best_regression_model.pkl
 │   ├── best_classification_model.pkl
-│   ├── ses_model.pkl                  (optional, time series)
-│   ├── holt_winters_model.pkl         (optional, time series)
-│   └── moving_average_config.json     (optional, time series)
+│   ├── ses_model.pkl
+│   ├── holt_winters_model.pkl
+│   └── moving_average_config.json
 ├── results/
 │   ├── regression_results.csv
 │   ├── classification_results.csv
@@ -128,15 +129,52 @@ EV_Charging_Demand_Analysis/
 │   └── app.py
 ├── requirements.txt
 ├── .gitignore
+├── LICENSE
 └── README.md
 ```
 
-## 5. Workflow
+## 5. 🏗️ Architecture & Workflow
+
+### Workflow
 
 ```
 Data Understanding -> Data Cleaning -> EDA -> Feature Engineering
 -> Regression -> Classification -> Time Series -> Explainability -> Streamlit Dashboard
 ```
+
+### Architecture
+
+```mermaid
+flowchart TD
+    A[("ChargingRecords.csv<br/>72,856 sessions")] --> B["01 Data Understanding"]
+    B --> C["02 Data Cleaning"]
+    C --> D[("cleaned_data.csv")]
+    D --> E["03 EDA"]
+    D --> F["04 Feature Engineering<br/>time + history features, HighDemand target"]
+    F --> G[("featured_data.csv")]
+    G --> H["05 Regression<br/>predict Demand"]
+    G --> I["06 Classification<br/>High / Normal demand"]
+    D --> J["07 Time Series<br/>daily demand forecast"]
+    H --> K["08 Explainability<br/>Feature Importance, SHAP, LIME"]
+    I --> K
+    H --> M[("models/*.pkl")]
+    I --> M
+    J --> M
+    H --> R[("results/*.csv")]
+    I --> R
+    J --> R
+    K --> R
+    G --> S["Streamlit Dashboard<br/>dashboard/app.py"]
+    M --> S
+    R --> S
+```
+
+| Layer | Components | Output |
+|---|---|---|
+| **Data** | Raw CSV, cleaning, feature engineering | `cleaned_data.csv`, `featured_data.csv` |
+| **Modeling** | Regression, Classification, Time Series | `models/*.pkl`, metric tables |
+| **Explainability** | Feature Importance, SHAP, LIME | Importance CSVs, SHAP images, LIME output |
+| **Application** | Streamlit dashboard | Interactive pages for analysis, prediction and forecasting |
 
 ## 6. Step-by-Step Methodology
 
@@ -283,7 +321,7 @@ Sidebar filters apply to Overview and Time Series. Regression and Classification
 
 ```bash
 # 1. Clone the repository
-git clonehttps://github.com/ssrikanthssk/EV_Charging_Demand_Analysis
+git clone https://github.com/ssrikanthssk/EV_Charging_Demand_Analysis
 cd EV_Charging_Demand_Analysis
 
 # 2. (Recommended) create a virtual environment
@@ -365,5 +403,13 @@ Python, Pandas, NumPy, Matplotlib, Seaborn, Scikit-learn, XGBoost, LightGBM, Imb
 ## 16. Author
 
 **Srikanth S**
- EV Charging Demand Prediction and Usage Pattern Analysis
-GitHub:(https://github.com/ssrikanthssk)
+EV Charging Demand Prediction and Usage Pattern Analysis
+GitHub: [ssrikanthssk](https://github.com/ssrikanthssk)
+
+## 17. 📄 License
+
+Distributed under the MIT License. See `LICENSE` for more information.
+
+---
+
+<p align="center">Built with ⚡ for the future of Smart Mobility & Clean Energy Infrastructure</p>
