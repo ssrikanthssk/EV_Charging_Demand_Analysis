@@ -283,7 +283,7 @@ Sidebar filters apply to Overview and Time Series. Regression and Classification
 
 ```bash
 # 1. Clone the repository
-git clone [YOUR-REPO-URL]
+git clonehttps://github.com/ssrikanthssk/EV_Charging_Demand_Analysis
 cd EV_Charging_Demand_Analysis
 
 # 2. (Recommended) create a virtual environment
@@ -366,4 +366,4 @@ Python, Pandas, NumPy, Matplotlib, Seaborn, Scikit-learn, XGBoost, LightGBM, Imb
 
 **Srikanth S**
 GUVI x HCL, EV Charging Demand Prediction and Usage Pattern Analysis
-GitHub: [YOUR-GITHUB-LINK]
+GitHub:[ \[YOUR-GITHUB-LINK\]](https://github.com/ssrikanthssk)
