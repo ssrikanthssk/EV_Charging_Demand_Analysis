@@ -1,6 +1,6 @@
 # EV Charging Demand Prediction and Usage Pattern Analysis
 
-GUVI x HCL capstone project (Domain: Electric Vehicles and Sustainable Transportation).
+(Domain: Electric Vehicles and Sustainable Transportation).
 
 An end-to-end machine learning project that analyzes EV charging station usage and predicts charging demand. It covers data cleaning, EDA, feature engineering, regression, classification, time series forecasting, model explainability (Feature Importance, SHAP, LIME) and an interactive Streamlit dashboard.
 
