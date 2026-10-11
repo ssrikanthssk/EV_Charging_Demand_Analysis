@@ -133,7 +133,7 @@ EV_Charging_Demand_Analysis/
 └── README.md
 ```
 
-## 5. 🏗️ Architecture & Workflow
+## 5.  Architecture & Workflow
 
 ### Workflow
 
