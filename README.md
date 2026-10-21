@@ -340,7 +340,7 @@ model.predict(X_new)   # X_new has the same 14 input columns used in training
 
 ## 13. Limitations
 
-- One `UserID` (likely a guest or default ID) holds a large share of the sessions, so its history features act as a group average rather than one person's behavior.
+- One `UserID` (likely a guest or default ID) holds about 43% of sessions (31,553 of 72,856), so its history features act as a group average rather than one person's behavior.
 - Regression R² is moderate (about 0.35) because individual charging needs (battery size, trip purpose) are not in the data.
 - The first and last days of the data are partial, which can add noise at the edges.
 - The classification threshold (median) splits the data 50/50 by design, so imbalance handling (SMOTE, ADASYN) was checked but not needed.
