@@ -139,7 +139,11 @@ flowchart TD
     F --> G[("featured_data.csv")]
     G --> H["05 Regression<br/>predict Demand"]
     G --> I["06 Classification<br/>High / Normal demand"]
+<<<<<<< HEAD
     H --> K["07 Feature Importance"]
+=======
+    H --> K["07 Explainability<br/>Feature Importance"]
+>>>>>>> 1ac7a560b6334aace41ca75fd9c16122c214c75c
     I --> K
     H --> M[("models/*.pkl")]
     I --> M
