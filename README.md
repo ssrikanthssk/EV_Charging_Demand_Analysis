@@ -2,7 +2,7 @@
  
 (Domain: Electric Vehicles and Sustainable Transportation).
  
-An end-to-end machine learning project that analyzes EV charging station usage and predicts charging demand. It covers data cleaning, EDA, feature engineering, regression, classification, model explainability (Feature Importance, SHAP, LIME) and an interactive Streamlit dashboard.
+An end-to-end machine learning project that analyzes EV charging station usage and predicts charging demand. It covers data cleaning, EDA, feature engineering, regression, classification, feature importance and an interactive Streamlit dashboard.
  
 ---
  
@@ -38,7 +38,7 @@ The project has two machine learning problems:
 | 1 | Charging Demand Prediction | Regression | `Demand` |
 | 2 | High-Demand Session Prediction | Classification | `HighDemand` (Demand >= median) |
  
-The final output is a Streamlit dashboard that combines the usage analysis, model comparison, feature importance and a live demand prediction tool. SHAP and LIME explanations are produced in the explainability notebook (see section 6.7).
+The final output is a Streamlit dashboard that combines the usage analysis, model comparison, feature importance and a live demand prediction tool.
  
 ## 2. Business Use Cases
  
@@ -109,12 +109,7 @@ EV_Charging_Demand_Analysis/
 │   ├── regression_results.csv
 │   ├── classification_results.csv
 │   ├── reg_feature_importance.csv
-│   ├── clf_feature_importance.csv
-│   ├── shap_summary.png
-│   ├── shap_bar.png
-│   ├── lime_example.csv
-│   ├── lime_session.csv
-│   └── lime_example.html
+│   └── clf_feature_importance.csv
 ├── dashboard/
 │   └── app.py
 ├── requirements.txt
@@ -129,7 +124,7 @@ EV_Charging_Demand_Analysis/
  
 ```
 Data Understanding -> Data Cleaning -> EDA -> Feature Engineering
--> Regression -> Classification -> Explainability -> Streamlit Dashboard
+-> Regression -> Classification -> Feature Importance -> Streamlit Dashboard
 ```
  
 ### Architecture
@@ -144,7 +139,7 @@ flowchart TD
     F --> G[("featured_data.csv")]
     G --> H["05 Regression<br/>predict Demand"]
     G --> I["06 Classification<br/>High / Normal demand"]
-    H --> K["07 Explainability<br/>Feature Importance, SHAP, LIME"]
+    H --> K["07 Feature Importance"]
     I --> K
     H --> M[("models/*.pkl")]
     I --> M
@@ -160,7 +155,7 @@ flowchart TD
 |---|---|---|
 | **Data** | Raw CSV, cleaning, feature engineering | `cleaned_data.csv`, `featured_data.csv` |
 | **Modeling** | Regression, Classification | `models/*.pkl`, metric tables |
-| **Explainability** | Feature Importance, SHAP, LIME | Importance CSVs, SHAP images, LIME output |
+| **Feature importance** | LightGBM and Random Forest importance | Importance CSVs |
 | **Application** | Streamlit dashboard | Interactive pages for usage analysis, model comparison and live demand prediction |
  
 ## 6. Step-by-Step Methodology
@@ -201,11 +196,9 @@ flowchart TD
 - **Metrics:** Accuracy, Precision, Recall, F1-score, ROC-AUC.
 - **Class imbalance:** checked first. Because the threshold is the median, the classes are about 50/50, so Random Oversampling, SMOTE and ADASYN were not required.
 - Saved the best model (by ROC-AUC) as `models/best_classification_model.pkl`.
-### 6.7 Explainability (`07_explainability.ipynb`)
-- **Feature importance** from the LightGBM and Random Forest models (saved to `results/reg_feature_importance.csv` and `results/clf_feature_importance.csv`, and shown in the dashboard).
-- **SHAP** (TreeExplainer on a 2,000-session test sample) for the direction and size of each feature's impact. Saved as images in `results/`.
-- **LIME** to explain one single prediction. Saved as CSV and HTML in `results/`.
-- SHAP and LIME outputs are viewed from the `results/` folder. The dashboard itself shows feature importance only.
+### 6.7 Feature Importance (`07_explainability.ipynb`)
+- **Feature importance** from the best regression model (LightGBM) and the best classification model (Random Forest).
+- Saved to `results/reg_feature_importance.csv` and `results/clf_feature_importance.csv`, and shown in the dashboard.
 ### 6.8 Dashboard (`dashboard/app.py`)
 - Interactive Streamlit app with usage analysis, model comparison and a live prediction tool (see section 9).
 ## 7. Results
@@ -240,11 +233,8 @@ Random Forest has the best ROC-AUC. LightGBM is slightly ahead on Accuracy and F
 **What drives demand**
 - The **past behavior of the user and the charger** (`User_AvgPastDemand`, `Charger_AvgPastDemand`) is the strongest predictor in both regression and classification.
 - **Hour of day** is next, then the **number of past sessions** of the user and the charger.
-- **Night** sessions push predicted demand up.
 - Location, charger company, charger type, month and day of week have a small effect.
 - Regression and classification agree on the same top factors, which makes the result more trustworthy.
-**Feature importance vs SHAP**
-- LightGBM's built-in importance ranks `Charger_AvgPastDemand` first, while SHAP ranks `User_AvgPastDemand` first. Built-in importance counts how often a feature is used in splits. SHAP measures the real impact on predictions, so SHAP is used as the main result.
 **Model quality**
 - Regression R² is about 0.35: the features explain roughly a third of the variation in demand. The rest is individual behavior that the dataset does not contain.
 - Classification reaches about 73% accuracy and 0.81 ROC-AUC.
@@ -297,8 +287,6 @@ The dashboard needs these files, which are included in the repository:
 - `models/best_regression_model.pkl` and `models/best_classification_model.pkl`
 - `results/regression_results.csv` and `results/classification_results.csv`
 - `results/reg_feature_importance.csv` and `results/clf_feature_importance.csv`
-The SHAP and LIME files in `results/` are not required by the dashboard.
- 
 ### Option B: reproduce the whole analysis
 Run the notebooks in order. Each notebook saves the output that the next one loads.
  
@@ -310,7 +298,7 @@ Run the notebooks in order. Each notebook saves the output that the next one loa
 | 4 | `04_feature_engineering.ipynb` | `data/processed/featured_data.csv` |
 | 5 | `05_regression.ipynb` | `results/regression_results.csv`, `models/best_regression_model.pkl` |
 | 6 | `06_classification.ipynb` | `results/classification_results.csv`, `models/best_classification_model.pkl` |
-| 7 | `07_explainability.ipynb` | feature importance CSVs, SHAP images, LIME files |
+| 7 | `07_explainability.ipynb` | feature importance CSVs |
  
 Then start the dashboard with Option A.
  
@@ -320,7 +308,7 @@ Then start the dashboard with Option A.
 |---|---|
 | `data/processed/` | Cleaned and feature-engineered datasets |
 | `models/` | Pickled best models (joblib) |
-| `results/` | Metric tables, feature importance, SHAP images, LIME output |
+| `results/` | Metric tables and feature importance |
  
 Models are saved as full scikit-learn pipelines (preprocessing + model), so raw feature columns can be passed directly to `predict`:
  
@@ -343,11 +331,10 @@ model.predict(X_new)   # X_new has the same 14 input columns used in training
 - Add weather, holidays and local events as features.
 - Add future demand forecasting (ARIMA / SARIMA, Prophet or LSTM).
 - Hyperparameter tuning (Optuna or RandomizedSearchCV) for the boosting models.
-- Show SHAP and LIME explanations inside the dashboard.
 - Deploy the dashboard on Streamlit Community Cloud.
 ## 15. Tech Stack
  
-Python, Pandas, NumPy, Matplotlib, Seaborn, Scikit-learn, XGBoost, LightGBM, Imbalanced-learn, SHAP, LIME, Plotly, Streamlit, Joblib, Jupyter, Git / GitHub.
+Python, Pandas, NumPy, Matplotlib, Seaborn, Scikit-learn, XGBoost, LightGBM, Plotly, Streamlit, Joblib, Jupyter, Git / GitHub.
  
 ## 16. Author
  
