@@ -1,13 +1,13 @@
 # EV Charging Demand Prediction and Usage Pattern Analysis
-
+ 
 (Domain: Electric Vehicles and Sustainable Transportation).
-
+ 
 An end-to-end machine learning project that analyzes EV charging station usage and predicts charging demand. It covers data cleaning, EDA, feature engineering, regression, classification, model explainability (Feature Importance, SHAP, LIME) and an interactive Streamlit dashboard.
-
+ 
 ---
-
+ 
 ## Table of Contents
-
+ 
 1. [Problem Statement](#1-problem-statement)
 2. [Business Use Cases](#2-business-use-cases)
 3. [Dataset](#3-dataset)
@@ -25,24 +25,23 @@ An end-to-end machine learning project that analyzes EV charging station usage a
 15. [Tech Stack](#15-tech-stack)
 16. [Author](#16-author)
 17. [License](#17-license)
-
 ---
-
+ 
 ## 1. Problem Statement
-
+ 
 Develop a machine learning system to analyze EV charging station usage patterns and predict charging demand based on charger type, location, charging company, time of charging and historical usage behavior.
-
+ 
 The project has two machine learning problems:
-
+ 
 | # | Problem | Type | Target |
 |---|---|---|---|
 | 1 | Charging Demand Prediction | Regression | `Demand` |
 | 2 | High-Demand Session Prediction | Classification | `HighDemand` (Demand >= median) |
-
-The final output is a Streamlit dashboard that combines the analysis, predictions and model explanations.
-
+ 
+The final output is a Streamlit dashboard that combines the usage analysis, model comparison, feature importance and a live demand prediction tool. SHAP and LIME explanations are produced in the explainability notebook (see section 6.7).
+ 
 ## 2. Business Use Cases
-
+ 
 - **Demand prediction:** anticipate busy and low-demand sessions.
 - **Station planning:** find locations and time periods with consistently high demand.
 - **Capacity planning:** plan charger availability based on expected demand.
@@ -50,16 +49,14 @@ The final output is a Streamlit dashboard that combines the analysis, prediction
 - **Charger utilization analysis:** compare chargers, locations and companies, and find underused infrastructure.
 - **Operational optimization:** improve staffing and maintenance scheduling.
 - **Customer experience:** reduce waiting times during peak periods.
-
 ## 3. Dataset
-
+ 
 - **File:** `ChargingRecords.csv`
 - **Source:** publicly available EV charging transaction dataset
 - **Size:** 72,856 charging sessions, 13 columns
 - **Period:** 30 Sep 2021 to 30 Sep 2022 (366 days)
-
 ### Original columns
-
+ 
 | Column | Description |
 |---|---|
 | `UserID` | Identifier of the user who charged |
@@ -72,9 +69,9 @@ The final output is a Streamlit dashboard that combines the analysis, prediction
 | `StartDatetime`, `EndDatetime` | Start and end combined into one timestamp |
 | `Duration` | Length of the charging session |
 | `Demand` | Charging demand of the session (regression target) |
-
+ 
 ### Engineered columns
-
+ 
 | Column | Description |
 |---|---|
 | `Hour`, `Day`, `Month`, `DayOfWeek` | Parts of the start time (`DayOfWeek`: 0 = Monday) |
@@ -86,9 +83,9 @@ The final output is a Streamlit dashboard that combines the analysis, prediction
 | `Charger_AvgPastDemand` | The charger's average demand over earlier sessions only |
 | `IsNewUser` | 1 if this is the user's first session |
 | `HighDemand` | 1 if `Demand` >= median demand (14.1), else 0 (classification target) |
-
+ 
 ## 4. Project Structure
-
+ 
 ```
 EV_Charging_Demand_Analysis/
 ├── data/
@@ -125,18 +122,18 @@ EV_Charging_Demand_Analysis/
 ├── LICENSE
 └── README.md
 ```
-
+ 
 ## 5.  Architecture & Workflow
-
+ 
 ### Workflow
-
+ 
 ```
 Data Understanding -> Data Cleaning -> EDA -> Feature Engineering
 -> Regression -> Classification -> Explainability -> Streamlit Dashboard
 ```
-
+ 
 ### Architecture
-
+ 
 ```mermaid
 flowchart TD
     A[("ChargingRecords.csv<br/>72,856 sessions")] --> B["01 Data Understanding"]
@@ -147,7 +144,7 @@ flowchart TD
     F --> G[("featured_data.csv")]
     G --> H["05 Regression<br/>predict Demand"]
     G --> I["06 Classification<br/>High / Normal demand"]
-    H --> K["08 Explainability<br/>Feature Importance, SHAP, LIME"]
+    H --> K["07 Explainability<br/>Feature Importance, SHAP, LIME"]
     I --> K
     H --> M[("models/*.pkl")]
     I --> M
@@ -158,20 +155,19 @@ flowchart TD
     M --> S
     R --> S
 ```
-
+ 
 | Layer | Components | Output |
 |---|---|---|
 | **Data** | Raw CSV, cleaning, feature engineering | `cleaned_data.csv`, `featured_data.csv` |
 | **Modeling** | Regression, Classification | `models/*.pkl`, metric tables |
 | **Explainability** | Feature Importance, SHAP, LIME | Importance CSVs, SHAP images, LIME output |
-| **Application** | Streamlit dashboard | Interactive pages for analysis, prediction and explanations |
-
+| **Application** | Streamlit dashboard | Interactive pages for usage analysis, model comparison and live demand prediction |
+ 
 ## 6. Step-by-Step Methodology
-
+ 
 ### 6.1 Data Understanding (`01_data_understanding_cleaning.ipynb`)
 - Loaded the CSV and checked shape, columns, data types, summary statistics and unique values.
 - Reviewed the first rows to understand what one record represents (one charging session).
-
 ### 6.2 Data Cleaning (`02_data_cleaning.ipynb`)
 - Converted `StartDatetime`, `EndDatetime`, `StartDay`, `EndDay` to datetime.
 - Converted `UserID`, `ChargerID`, `ChargerCompany`, `ChargerType` to categories (they are identifiers, not quantities).
@@ -179,14 +175,12 @@ flowchart TD
 - Checked correctness: end time before start time, `Demand <= 0`, `Duration <= 0`, and whether `Duration` matches the timestamps.
 - Detected outliers with the IQR method. Outliers were **kept** because large sessions are real charging events. Only impossible values are treated as errors.
 - Saved `data/processed/cleaned_data.csv`.
-
 ### 6.3 Exploratory Data Analysis (`03_eda.ipynb`)
 - Univariate: histograms, box plots and skewness of `Demand` and `Duration`.
 - Categorical: counts by charger type, company and location.
 - Bivariate: average demand by charger type, company, location, hour, day of week and month.
 - Correlation heatmap of numeric columns.
 - Daily demand trend over the full period.
-
 ### 6.4 Feature Engineering (`04_feature_engineering.ipynb`)
 - Time features: hour, day, month, day of week, weekend flag, time of day.
 - History features: user and charger previous session count and past average demand.
@@ -194,7 +188,6 @@ flowchart TD
 - Classification target: `HighDemand = 1` if `Demand >= median(Demand)`.
 - Class balance check: about 50.04% High and 49.96% Normal, so the classes are balanced.
 - Saved `data/processed/featured_data.csv`.
-
 ### 6.5 Regression (`05_regression.ipynb`)
 - **Features:** `ChargerCompany`, `ChargerType`, `Location`, `TimeOfDay` (one-hot encoded) and `Hour`, `Day`, `Month`, `DayOfWeek`, `IsWeekend`, history features, `IsNewUser` (standardized).
 - **Not used as inputs:** `Duration`, `EndDatetime`, `EndDay`, `EndTime` (only known after charging ends) and `UserID`, `ChargerID` (too many unique values, covered by history features).
@@ -202,26 +195,23 @@ flowchart TD
 - **Models:** Linear Regression, Decision Tree, Random Forest, Gradient Boosting, XGBoost, LightGBM.
 - **Metrics:** MAE, MSE, RMSE, R².
 - Saved the best model as `models/best_regression_model.pkl`.
-
 ### 6.6 Classification (`06_classification.ipynb`)
 - Same features and the same time-based split as regression.
 - **Models:** Logistic Regression, Decision Tree, Random Forest, KNN, SVM, XGBoost, LightGBM. KNN and SVM were trained on a 15,000-row sample of the training data for speed.
 - **Metrics:** Accuracy, Precision, Recall, F1-score, ROC-AUC.
 - **Class imbalance:** checked first. Because the threshold is the median, the classes are about 50/50, so Random Oversampling, SMOTE and ADASYN were not required.
 - Saved the best model (by ROC-AUC) as `models/best_classification_model.pkl`.
-
 ### 6.7 Explainability (`07_explainability.ipynb`)
-- **Feature importance** from the LightGBM and Random Forest models.
-- **SHAP** (TreeExplainer on a 2,000-session test sample) for the direction and size of each feature's impact.
-- **LIME** to explain one single prediction.
-
+- **Feature importance** from the LightGBM and Random Forest models (saved to `results/reg_feature_importance.csv` and `results/clf_feature_importance.csv`, and shown in the dashboard).
+- **SHAP** (TreeExplainer on a 2,000-session test sample) for the direction and size of each feature's impact. Saved as images in `results/`.
+- **LIME** to explain one single prediction. Saved as CSV and HTML in `results/`.
+- SHAP and LIME outputs are viewed from the `results/` folder. The dashboard itself shows feature importance only.
 ### 6.8 Dashboard (`dashboard/app.py`)
-- Interactive Streamlit app that brings all the results together (see section 9).
-
+- Interactive Streamlit app with usage analysis, model comparison and a live prediction tool (see section 9).
 ## 7. Results
-
+ 
 ### Regression (test set, last 20% of sessions)
-
+ 
 | Model | MAE | MSE | RMSE | R² |
 |---|---|---|---|---|
 | **LightGBM** | **8.2082** | **125.9225** | **11.2215** | **0.3496** |
@@ -230,9 +220,9 @@ flowchart TD
 | Linear Regression | 8.5510 | 133.6735 | 11.5617 | 0.3096 |
 | Gradient Boosting | 9.2284 | 145.6440 | 12.0683 | 0.2478 |
 | Decision Tree | 8.9138 | 155.3163 | 12.4626 | 0.1978 |
-
+ 
 ### Classification (test set, last 20% of sessions)
-
+ 
 | Model | Accuracy | Precision | Recall | F1 | ROC-AUC |
 |---|---|---|---|---|---|
 | **Random Forest** | 0.7285 | 0.6973 | 0.7876 | 0.7397 | **0.8091** |
@@ -242,74 +232,76 @@ flowchart TD
 | SVM | 0.7127 | 0.6780 | 0.7878 | 0.7288 | 0.7821 |
 | Decision Tree | 0.7001 | 0.6899 | 0.7047 | 0.6972 | 0.7801 |
 | KNN | 0.6941 | 0.6733 | 0.7298 | 0.7004 | 0.7623 |
-
+ 
 Random Forest has the best ROC-AUC. LightGBM is slightly ahead on Accuracy and F1. The top models are very close.
-
+ 
 ## 8. Key Findings
-
+ 
 **What drives demand**
 - The **past behavior of the user and the charger** (`User_AvgPastDemand`, `Charger_AvgPastDemand`) is the strongest predictor in both regression and classification.
 - **Hour of day** is next, then the **number of past sessions** of the user and the charger.
 - **Night** sessions push predicted demand up.
 - Location, charger company, charger type, month and day of week have a small effect.
 - Regression and classification agree on the same top factors, which makes the result more trustworthy.
-
 **Feature importance vs SHAP**
 - LightGBM's built-in importance ranks `Charger_AvgPastDemand` first, while SHAP ranks `User_AvgPastDemand` first. Built-in importance counts how often a feature is used in splits. SHAP measures the real impact on predictions, so SHAP is used as the main result.
-
 **Model quality**
 - Regression R² is about 0.35: the features explain roughly a third of the variation in demand. The rest is individual behavior that the dataset does not contain.
 - Classification reaches about 73% accuracy and 0.81 ROC-AUC.
-
 ## 9. Streamlit Dashboard
-
+ 
 Run the app and use the **sidebar filters** (location, charger type, company, date range). The pages are tabs at the top of the app.
-
+ 
 | Tab | What it shows |
 |---|---|
-| **Overview** | KPIs, daily and monthly demand, demand distribution, day x hour heatmap, sessions by hour, time of day, location share, charger type and company, top 10 chargers. Each chart has a short explanation. |
-| **Data Explore** | Data dictionary, data types, missing values, summary statistics, distributions, outliers, categorical explorer, correlation matrix, data preview and download. |
-| **1. Regression** | Task explanation, model comparison, actual vs predicted, error distribution, important factors (feature importance, SHAP, LIME) and a **Predict demand** form. |
-| **2. Classification** | Task explanation, class balance check, model comparison, confusion matrix with adjustable threshold, ROC curve, important factors and a **Classify session** form. |
-| **Models & Explainability** | Best model per task, full model comparison, feature importance, SHAP and LIME explanations, key findings and limits. |
-
-Sidebar filters apply to the Overview tab. Regression and Classification use the fixed 80/20 time-based test set.
-
+| **Overview** | Four charts, each with a short caption: demand distribution (with median line), sessions by time period, average demand by location type and hourly demand pattern. |
+| **Data Explore** | Basic characteristics (rows, columns, missing values, duplicates, date range), data dictionary, summary statistics, and a filterable data preview (location, charger type, company, time of day, date range, demand range, User/Charger ID) with CSV download. |
+| **1. Regression** | Task explanation, best model, RMSE and R² comparison charts, feature importance and the detailed metrics table. |
+| **2. Classification** | Task explanation, best model by ROC-AUC, all-metrics comparison chart, feature importance and the detailed metrics table. |
+| **Demand Prediction** | One form for a single charging session (charger company, type, location, date, hour, user and charger history). One click on **Predict** returns both answers: the predicted demand (regression) and the High / Normal Demand label with probability (classification). Includes a plain-language summary, key numbers, gauges, a comparison with the typical session and user/charger averages, and 24-hour curves showing how predicted demand and High-Demand probability change with the start hour. |
+ 
+Notes:
+- Sidebar filters apply to the **Overview** tab only. The Data Explore tab has its own filters.
+- Regression and Classification tabs use the fixed 80/20 time-based test results.
+- The prediction form takes the history features (previous sessions and average past demand) as inputs. Defaults are set to typical values.
 ## 10. Setup and Installation
-
+ 
 **Requirements:** Python 3.10 or newer.
-
+ 
 ```bash
 # 1. Clone the repository
 git clone https://github.com/ssrikanthssk/EV_Charging_Demand_Analysis
 cd EV_Charging_Demand_Analysis
-
+ 
 # 2. (Recommended) create a virtual environment
 python -m venv venv
 venv\Scripts\activate          # Windows
 # source venv/bin/activate     # macOS / Linux
-
+ 
 # 3. Install dependencies
 pip install -r requirements.txt
 ```
-
+ 
 Place `ChargingRecords.csv` in `data/raw/` if it is not already there.
-
+ 
 ## 11. How to Run
-
+ 
 ### Option A: run only the dashboard (uses the saved files)
 ```bash
 streamlit run dashboard/app.py
 ```
 Open the link shown in the terminal (usually http://localhost:8501).
-
+ 
 The dashboard needs these files, which are included in the repository:
-`data/processed/featured_data.csv`, `models/best_regression_model.pkl`,
-`models/best_classification_model.pkl` and the files in `results/`.
-
+- `data/processed/featured_data.csv`
+- `models/best_regression_model.pkl` and `models/best_classification_model.pkl`
+- `results/regression_results.csv` and `results/classification_results.csv`
+- `results/reg_feature_importance.csv` and `results/clf_feature_importance.csv`
+The SHAP and LIME files in `results/` are not required by the dashboard.
+ 
 ### Option B: reproduce the whole analysis
 Run the notebooks in order. Each notebook saves the output that the next one loads.
-
+ 
 | Order | Notebook | Output |
 |---|---|---|
 | 1 | `01_data_understanding_cleaning.ipynb` | (exploration only) |
@@ -319,52 +311,53 @@ Run the notebooks in order. Each notebook saves the output that the next one loa
 | 5 | `05_regression.ipynb` | `results/regression_results.csv`, `models/best_regression_model.pkl` |
 | 6 | `06_classification.ipynb` | `results/classification_results.csv`, `models/best_classification_model.pkl` |
 | 7 | `07_explainability.ipynb` | feature importance CSVs, SHAP images, LIME files |
-
+ 
 Then start the dashboard with Option A.
-
+ 
 ## 12. Saved Files
-
+ 
 | Folder | Content |
 |---|---|
 | `data/processed/` | Cleaned and feature-engineered datasets |
 | `models/` | Pickled best models (joblib) |
 | `results/` | Metric tables, feature importance, SHAP images, LIME output |
-
+ 
 Models are saved as full scikit-learn pipelines (preprocessing + model), so raw feature columns can be passed directly to `predict`:
-
+ 
 ```python
 import joblib
 model = joblib.load("models/best_regression_model.pkl")
 model.predict(X_new)   # X_new has the same 14 input columns used in training
 ```
-
+ 
 ## 13. Limitations
-
+ 
 - One `UserID` (likely a guest or default ID) holds about 43% of sessions (31,553 of 72,856), so its history features act as a group average rather than one person's behavior.
 - Regression R² is moderate (about 0.35) because individual charging needs (battery size, trip purpose) are not in the data.
 - The first and last days of the data are partial, which can add noise at the edges.
 - The classification threshold (median) splits the data 50/50 by design, so imbalance handling (SMOTE, ADASYN) was checked but not needed.
 - KNN and SVM were trained on a sample of the training data for speed.
-
+- The dashboard prediction form needs the user and charger history values as manual inputs, since it does not look them up from the data.
 ## 14. Future Improvements
-
+ 
 - Add weather, holidays and local events as features.
 - Add future demand forecasting (ARIMA / SARIMA, Prophet or LSTM).
 - Hyperparameter tuning (Optuna or RandomizedSearchCV) for the boosting models.
+- Show SHAP and LIME explanations inside the dashboard.
 - Deploy the dashboard on Streamlit Community Cloud.
-
 ## 15. Tech Stack
-
+ 
 Python, Pandas, NumPy, Matplotlib, Seaborn, Scikit-learn, XGBoost, LightGBM, Imbalanced-learn, SHAP, LIME, Plotly, Streamlit, Joblib, Jupyter, Git / GitHub.
-
+ 
 ## 16. Author
-
+ 
 **Srikanth S**
 EV Charging Demand Prediction and Usage Pattern Analysis
 GitHub: [ssrikanthssk](https://github.com/ssrikanthssk)
-
+ 
 ## 17. 📄 License
-
+ 
 Distributed under the MIT License. See `LICENSE` for more information.
-
+ 
 ---
+ 
