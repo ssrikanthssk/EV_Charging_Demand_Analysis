@@ -6,7 +6,6 @@ scikit-learn
 xgboost
 lightgbm
 imbalanced-learn
-statsmodels
 shap
 lime
 streamlit

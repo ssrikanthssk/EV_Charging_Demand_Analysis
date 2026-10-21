@@ -2,7 +2,7 @@
 
 (Domain: Electric Vehicles and Sustainable Transportation).
 
-An end-to-end machine learning project that analyzes EV charging station usage and predicts charging demand. It covers data cleaning, EDA, feature engineering, regression, classification, time series forecasting, model explainability (Feature Importance, SHAP, LIME) and an interactive Streamlit dashboard.
+An end-to-end machine learning project that analyzes EV charging station usage and predicts charging demand. It covers data cleaning, EDA, feature engineering, regression, classification, model explainability (Feature Importance, SHAP, LIME) and an interactive Streamlit dashboard.
 
 ---
 
@@ -32,26 +32,24 @@ An end-to-end machine learning project that analyzes EV charging station usage a
 
 Develop a machine learning system to analyze EV charging station usage patterns and predict charging demand based on charger type, location, charging company, time of charging and historical usage behavior.
 
-The project has three machine learning problems:
+The project has two machine learning problems:
 
 | # | Problem | Type | Target |
 |---|---|---|---|
 | 1 | Charging Demand Prediction | Regression | `Demand` |
 | 2 | High-Demand Session Prediction | Classification | `HighDemand` (Demand >= median) |
-| 3 | Future Charging Demand Forecasting | Time Series | Daily total `Demand` |
 
-The final output is a Streamlit dashboard that combines the analysis, predictions, forecasts and model explanations.
+The final output is a Streamlit dashboard that combines the analysis, predictions and model explanations.
 
 ## 2. Business Use Cases
 
-- **Demand forecasting:** anticipate busy and low-demand periods.
+- **Demand prediction:** anticipate busy and low-demand sessions.
 - **Station planning:** find locations and time periods with consistently high demand.
 - **Capacity planning:** plan charger availability based on expected demand.
 - **Peak demand management:** identify high-demand periods and reduce congestion.
 - **Charger utilization analysis:** compare chargers, locations and companies, and find underused infrastructure.
 - **Operational optimization:** improve staffing and maintenance scheduling.
 - **Customer experience:** reduce waiting times during peak periods.
-- **Long-term planning:** estimate future demand for infrastructure investment.
 
 ## 3. Dataset
 
@@ -100,24 +98,19 @@ EV_Charging_Demand_Analysis/
 │       ├── cleaned_data.csv
 │       └── featured_data.csv
 ├── notebooks/
-│   ├── 01_data_understanding.ipynb
+│   ├── 01_data_understanding_cleaning.ipynb
 │   ├── 02_data_cleaning.ipynb
 │   ├── 03_eda.ipynb
 │   ├── 04_feature_engineering.ipynb
 │   ├── 05_regression.ipynb
 │   ├── 06_classification.ipynb
-│   ├── 07_time_series.ipynb
-│   └── 08_explainability.ipynb
+│   └── 07_explainability.ipynb
 ├── models/
 │   ├── best_regression_model.pkl
-│   ├── best_classification_model.pkl
-│   ├── ses_model.pkl
-│   ├── holt_winters_model.pkl
-│   └── moving_average_config.json
+│   └── best_classification_model.pkl
 ├── results/
 │   ├── regression_results.csv
 │   ├── classification_results.csv
-│   ├── timeseries_results.csv
 │   ├── reg_feature_importance.csv
 │   ├── clf_feature_importance.csv
 │   ├── shap_summary.png
@@ -139,7 +132,7 @@ EV_Charging_Demand_Analysis/
 
 ```
 Data Understanding -> Data Cleaning -> EDA -> Feature Engineering
--> Regression -> Classification -> Time Series -> Explainability -> Streamlit Dashboard
+-> Regression -> Classification -> Explainability -> Streamlit Dashboard
 ```
 
 ### Architecture
@@ -154,15 +147,12 @@ flowchart TD
     F --> G[("featured_data.csv")]
     G --> H["05 Regression<br/>predict Demand"]
     G --> I["06 Classification<br/>High / Normal demand"]
-    D --> J["07 Time Series<br/>daily demand forecast"]
     H --> K["08 Explainability<br/>Feature Importance, SHAP, LIME"]
     I --> K
     H --> M[("models/*.pkl")]
     I --> M
-    J --> M
     H --> R[("results/*.csv")]
     I --> R
-    J --> R
     K --> R
     G --> S["Streamlit Dashboard<br/>dashboard/app.py"]
     M --> S
@@ -172,13 +162,13 @@ flowchart TD
 | Layer | Components | Output |
 |---|---|---|
 | **Data** | Raw CSV, cleaning, feature engineering | `cleaned_data.csv`, `featured_data.csv` |
-| **Modeling** | Regression, Classification, Time Series | `models/*.pkl`, metric tables |
+| **Modeling** | Regression, Classification | `models/*.pkl`, metric tables |
 | **Explainability** | Feature Importance, SHAP, LIME | Importance CSVs, SHAP images, LIME output |
-| **Application** | Streamlit dashboard | Interactive pages for analysis, prediction and forecasting |
+| **Application** | Streamlit dashboard | Interactive pages for analysis, prediction and explanations |
 
 ## 6. Step-by-Step Methodology
 
-### 6.1 Data Understanding (`01_data_understanding.ipynb`)
+### 6.1 Data Understanding (`01_data_understanding_cleaning.ipynb`)
 - Loaded the CSV and checked shape, columns, data types, summary statistics and unique values.
 - Reviewed the first rows to understand what one record represents (one charging session).
 
@@ -220,21 +210,12 @@ flowchart TD
 - **Class imbalance:** checked first. Because the threshold is the median, the classes are about 50/50, so Random Oversampling, SMOTE and ADASYN were not required.
 - Saved the best model (by ROC-AUC) as `models/best_classification_model.pkl`.
 
-### 6.7 Time Series (`07_time_series.ipynb`)
-- Aggregated demand per day (366 daily points).
-- Decomposed into trend, weekly seasonality (period 7) and noise.
-- Tested stationarity with the Augmented Dickey-Fuller (ADF) test, before and after differencing.
-- Split by time: last 20% of days as the test period.
-- **Models:** Moving Average (3, 7, 14 days), Simple Exponential Smoothing, Holt-Winters (additive trend and weekly seasonality).
-- **Metrics:** MAE and RMSE.
-- Identified increasing and decreasing months using month-on-month change.
-
-### 6.8 Explainability (`08_explainability.ipynb`)
+### 6.7 Explainability (`07_explainability.ipynb`)
 - **Feature importance** from the LightGBM and Random Forest models.
 - **SHAP** (TreeExplainer on a 2,000-session test sample) for the direction and size of each feature's impact.
 - **LIME** to explain one single prediction.
 
-### 6.9 Dashboard (`dashboard/app.py`)
+### 6.8 Dashboard (`dashboard/app.py`)
 - Interactive Streamlit app that brings all the results together (see section 9).
 
 ## 7. Results
@@ -264,18 +245,6 @@ flowchart TD
 
 Random Forest has the best ROC-AUC. LightGBM is slightly ahead on Accuracy and F1. The top models are very close.
 
-### Time series (daily demand, last 20% of days as test)
-
-| Model | MAE | RMSE |
-|---|---|---|
-| **Moving Average (7 days)** | 498.87 | **690.70** |
-| Moving Average (14 days) | **495.61** | 701.01 |
-| Moving Average (3 days) | 529.56 | 720.15 |
-| Simple Exponential Smoothing | 586.79 | 808.08 |
-| Holt-Winters | 813.22 | 1050.97 |
-
-Moving Average is one-step-ahead (each day is predicted from the previous days). Simple Exponential Smoothing and Holt-Winters forecast the whole test period at once, which is harder, so the comparison favors Moving Average.
-
 ## 8. Key Findings
 
 **What drives demand**
@@ -288,32 +257,23 @@ Moving Average is one-step-ahead (each day is predicted from the previous days).
 **Feature importance vs SHAP**
 - LightGBM's built-in importance ranks `Charger_AvgPastDemand` first, while SHAP ranks `User_AvgPastDemand` first. Built-in importance counts how often a feature is used in splits. SHAP measures the real impact on predictions, so SHAP is used as the main result.
 
-**Time series**
-- Daily demand grows from about 2,000 (Oct 2021) to about 4,500-5,000 (Jul-Aug 2022), with the peak month in Aug 2022 (143,041 total demand).
-- There is a clear **weekly seasonality** (swing of about 250 around the trend).
-- The series is **not stationary** (ADF p-value 0.34) and becomes stationary after differencing (p about 0).
-- Large increases: Jan 2022 (+28.8%) and Jul 2022 (+18.8%).
-- Decreases: Feb 2022 (-5.9%) and Sep 2022 (-22.3%). A sharp one-day drop around 5 Sep 2022 (to about 700) looks like an outage or missing-data day.
-- The first month (Sep 2021, one partial day) and the last month may be partial, so their percentage changes should be ignored.
-
 **Model quality**
 - Regression R² is about 0.35: the features explain roughly a third of the variation in demand. The rest is individual behavior that the dataset does not contain.
 - Classification reaches about 73% accuracy and 0.81 ROC-AUC.
 
 ## 9. Streamlit Dashboard
 
-Run the app and use the **sidebar**: filters on top (location, charger type, company, date range) and a **Navigation** menu below them.
+Run the app and use the **sidebar filters** (location, charger type, company, date range). The pages are tabs at the top of the app.
 
-| Page | What it shows |
+| Tab | What it shows |
 |---|---|
 | **Overview** | KPIs, daily and monthly demand, demand distribution, day x hour heatmap, sessions by hour, time of day, location share, charger type and company, top 10 chargers. Each chart has a short explanation. |
 | **Data Explore** | Data dictionary, data types, missing values, summary statistics, distributions, outliers, categorical explorer, correlation matrix, data preview and download. |
-| **Regression** | Task explanation, model comparison, actual vs predicted, error distribution, important factors (feature importance, SHAP, LIME) and a **Predict demand** form with gauge, comparison chart and 24-hour curve. |
-| **Classification** | Task explanation, class balance check, model comparison, confusion matrix with adjustable threshold, ROC curve, important factors and a **Classify session** form with gauge, probability chart and 24-hour curve. |
-| **Time Series** | Daily series, trend / seasonality / noise, ADF test, Moving Average and Exponential Smoothing with MAE and RMSE, increasing and decreasing periods, and a future forecast. |
+| **1. Regression** | Task explanation, model comparison, actual vs predicted, error distribution, important factors (feature importance, SHAP, LIME) and a **Predict demand** form. |
+| **2. Classification** | Task explanation, class balance check, model comparison, confusion matrix with adjustable threshold, ROC curve, important factors and a **Classify session** form. |
 | **Models & Explainability** | Best model per task, full model comparison, feature importance, SHAP and LIME explanations, key findings and limits. |
 
-Sidebar filters apply to Overview and Time Series. Regression and Classification use the fixed 80/20 time-based test set.
+Sidebar filters apply to the Overview tab. Regression and Classification use the fixed 80/20 time-based test set.
 
 ## 10. Setup and Installation
 
@@ -352,14 +312,13 @@ Run the notebooks in order. Each notebook saves the output that the next one loa
 
 | Order | Notebook | Output |
 |---|---|---|
-| 1 | `01_data_understanding.ipynb` | (exploration only) |
+| 1 | `01_data_understanding_cleaning.ipynb` | (exploration only) |
 | 2 | `02_data_cleaning.ipynb` | `data/processed/cleaned_data.csv` |
 | 3 | `03_eda.ipynb` | (exploration only) |
 | 4 | `04_feature_engineering.ipynb` | `data/processed/featured_data.csv` |
 | 5 | `05_regression.ipynb` | `results/regression_results.csv`, `models/best_regression_model.pkl` |
 | 6 | `06_classification.ipynb` | `results/classification_results.csv`, `models/best_classification_model.pkl` |
-| 7 | `07_time_series.ipynb` | `results/timeseries_results.csv`, time series models |
-| 8 | `08_explainability.ipynb` | feature importance CSVs, SHAP images, LIME files |
+| 7 | `07_explainability.ipynb` | feature importance CSVs, SHAP images, LIME files |
 
 Then start the dashboard with Option A.
 
@@ -383,22 +342,20 @@ model.predict(X_new)   # X_new has the same 14 input columns used in training
 
 - One `UserID` (likely a guest or default ID) holds a large share of the sessions, so its history features act as a group average rather than one person's behavior.
 - Regression R² is moderate (about 0.35) because individual charging needs (battery size, trip purpose) are not in the data.
-- The first and last days and months are partial, which affects edge values in the time series.
-- Time series models are simple (Moving Average, Exponential Smoothing). Holt-Winters drifts upward at the end of the test period because the trend flattened in Sep 2022.
+- The first and last days of the data are partial, which can add noise at the edges.
 - The classification threshold (median) splits the data 50/50 by design, so imbalance handling (SMOTE, ADASYN) was checked but not needed.
 - KNN and SVM were trained on a sample of the training data for speed.
 
 ## 14. Future Improvements
 
 - Add weather, holidays and local events as features.
-- Try ARIMA / SARIMA, Prophet or LSTM for forecasting.
+- Add future demand forecasting (ARIMA / SARIMA, Prophet or LSTM).
 - Hyperparameter tuning (Optuna or RandomizedSearchCV) for the boosting models.
-- Hourly forecasting per location.
 - Deploy the dashboard on Streamlit Community Cloud.
 
 ## 15. Tech Stack
 
-Python, Pandas, NumPy, Matplotlib, Seaborn, Scikit-learn, XGBoost, LightGBM, Imbalanced-learn, Statsmodels, SHAP, LIME, Plotly, Streamlit, Joblib, Jupyter, Git / GitHub.
+Python, Pandas, NumPy, Matplotlib, Seaborn, Scikit-learn, XGBoost, LightGBM, Imbalanced-learn, SHAP, LIME, Plotly, Streamlit, Joblib, Jupyter, Git / GitHub.
 
 ## 16. Author
 
@@ -411,4 +368,3 @@ GitHub: [ssrikanthssk](https://github.com/ssrikanthssk)
 Distributed under the MIT License. See `LICENSE` for more information.
 
 ---
-

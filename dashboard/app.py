@@ -7,14 +7,9 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
-import streamlit.components.v1 as components
-from plotly.subplots import make_subplots
 from sklearn.metrics import (confusion_matrix, mean_absolute_error,
                              mean_squared_error, r2_score, roc_auc_score,
                              roc_curve)
-from statsmodels.tsa.holtwinters import ExponentialSmoothing, SimpleExpSmoothing
-from statsmodels.tsa.seasonal import seasonal_decompose
-from statsmodels.tsa.stattools import adfuller
 
 BASE = Path(__file__).resolve().parent.parent
 RES = BASE / "results"
@@ -114,7 +109,7 @@ def show_lime(key):
     """LIME explanation of one session, drawn as a native chart."""
     p = RES / "lime_example.csv"
     if not p.exists():
-        st.info("Run the last cell of 08_explainability.ipynb to create lime_example.csv.")
+        st.info("Run 07_explainability.ipynb to create lime_example.csv and lime_session.csv.")
         return
     lime = pd.read_csv(p)
     pred = lime["Predicted"].iloc[0]
@@ -138,7 +133,7 @@ def show_lime(key):
 
 # ====================== Sidebar filters ======================
 st.sidebar.header("Filters")
-st.sidebar.caption("Filters apply to Overview and Time Series. The Regression and "
+st.sidebar.caption("Filters apply to the Overview tab. The Regression and "
                    "Classification tabs always use the fixed 80/20 time-based test set.")
 locs = st.sidebar.multiselect("Location", sorted(df["Location"].unique()),
                               default=sorted(df["Location"].unique()))
@@ -160,9 +155,9 @@ if fdf.empty:
     st.warning("No data for the selected filters.")
     st.stop()
 
-tab_o, tab_d, tab_r, tab_c, tab_t, tab_m = st.tabs(
+tab_o, tab_d, tab_r, tab_c, tab_m = st.tabs(
     ["Overview", "Data Explore", "1. Regression", "2. Classification",
-     "3. Time Series", "Models & Explainability"])
+     "Models & Explainability"])
 
 # ====================== OVERVIEW ======================
 with tab_o:
@@ -532,171 +527,7 @@ classes are about 50/50, so Random Oversampling, SMOTE and ADASYN are **not requ
         st.caption(f"High Demand means Demand ≥ median ({median_demand:.2f}).")
 
 
-# ====================== 3. TIME SERIES ======================
-with tab_t:
-    st.header("3. Time Series: Future Charging Demand Forecasting")
-    st.markdown(
-        """
-**Goal:** understand how total demand changes over time and forecast future demand.
-
-**Steps on this page:**
-1. Convert timestamps into a time series and aggregate demand per day
-2. Analyze **trend, seasonality and noise**
-3. Check whether the series is **stationary** (ADF test)
-4. Apply **Moving Average** and **Exponential Smoothing**, evaluated with **MAE and RMSE**
-5. Identify periods of **increasing or decreasing** demand
-6. Forecast future demand
-
-This page follows the sidebar filters.
-        """
-    )
-    drop_edges = st.checkbox("Drop the first and last day (they may be partial days)", value=True)
-
-    daily_s = fdf.set_index("StartDatetime")["Demand"].resample("D").sum()
-    if drop_edges and len(daily_s) > 2:
-        daily_s = daily_s.iloc[1:-1]
-
-    if len(daily_s) < 60:
-        st.warning("Not enough days for time series analysis. Widen the filters (need 60+ days).")
-    else:
-        st.divider()
-        # ---- step 1 ----
-        st.subheader("Step 1: Daily demand time series")
-        st.plotly_chart(px.line(daily_s.rename("Demand"), title="Daily total demand")
-                        .update_layout(showlegend=False), use_container_width=True)
-        hr = fdf.groupby("Hour")["Demand"].sum().reset_index()
-        st.plotly_chart(px.bar(hr, x="Hour", y="Demand", title="Total demand by hour of day"),
-                        use_container_width=True)
-        st.caption(f"{len(daily_s)} daily points. Demand is aggregated by day (the hourly "
-                   f"pattern is shown above).")
-        st.divider()
-
-        # ---- step 2 ----
-        st.subheader("Step 2: Trend, seasonality and noise")
-        dec = seasonal_decompose(daily_s, model="additive", period=7)
-        fig = make_subplots(rows=4, cols=1, shared_xaxes=True,
-                            subplot_titles=["Observed", "Trend", "Seasonal (weekly)", "Residual (noise)"])
-        for i, comp in enumerate([dec.observed, dec.trend, dec.seasonal, dec.resid], start=1):
-            fig.add_trace(go.Scatter(x=comp.index, y=comp.values, mode="lines" if i < 4 else "markers",
-                                     showlegend=False), row=i, col=1)
-        fig.update_layout(height=750)
-        st.plotly_chart(fig, use_container_width=True)
-        seas_amp = float(dec.seasonal.max() - dec.seasonal.min())
-        st.markdown(
-            f"- **Trend:** the long-term direction (smooth line).\n"
-            f"- **Seasonality:** a repeating weekly cycle, swinging about {seas_amp:,.0f} "
-            f"from lowest to highest day.\n"
-            f"- **Noise:** what is left after removing trend and season. Very large "
-            f"residuals are outlier days (outages or missing data)."
-        )
-        st.divider()
-
-        # ---- step 3 ----
-        st.subheader("Step 3: Stationarity check (ADF test)")
-        p_raw = adfuller(daily_s.dropna())[1]
-        p_diff = adfuller(daily_s.diff().dropna())[1]
-        a, b = st.columns(2)
-        a.metric("p-value (original)", f"{p_raw:.4f}")
-        a.write("Stationary" if p_raw < 0.05 else "**Not stationary** (has a trend)")
-        b.metric("p-value (after differencing)", f"{p_diff:.4f}")
-        b.write("Stationary" if p_diff < 0.05 else "Still not stationary")
-        st.caption("p-value < 0.05 means stationary (stable mean over time). A trending "
-                   "series is not stationary, but differencing once usually fixes it.")
-        st.divider()
-
-        # ---- step 4 ----
-        st.subheader("Step 4: Forecasting models (Moving Average and Exponential Smoothing)")
-        test_pct = st.slider("Test period (% of days, from the end)", 10, 30, 20, 5)
-        n_test = max(int(len(daily_s) * test_pct / 100), 7)
-        train, test = daily_s.iloc[:-n_test], daily_s.iloc[-n_test:]
-        c1, c2 = st.columns(2)
-        w = c1.slider("Moving average window (days)", 2, 30, 7)
-        alpha = c2.slider("Exponential smoothing alpha", 0.05, 1.0, 0.3, 0.05)
-
-        preds = {}
-        for win in sorted({3, 7, 14, w}):
-            preds[f"Moving Average ({win}d)"] = (
-                daily_s.rolling(win).mean().shift(1).loc[test.index])
-        ses = SimpleExpSmoothing(train).fit(smoothing_level=alpha, optimized=False)
-        preds[f"Simple Exp Smoothing (alpha={alpha})"] = pd.Series(
-            ses.forecast(len(test)).values, index=test.index)
-        try:
-            hw = ExponentialSmoothing(train, trend="add", seasonal="add",
-                                      seasonal_periods=7).fit()
-            preds["Holt-Winters"] = pd.Series(hw.forecast(len(test)).values, index=test.index)
-        except Exception:
-            st.caption("Holt-Winters could not be fitted on this selection.")
-
-        rows = []
-        for name, p in preds.items():
-            ok = p.notna()
-            rows.append({"Model": name,
-                         "MAE": mean_absolute_error(test[ok], p[ok]),
-                         "RMSE": np.sqrt(mean_squared_error(test[ok], p[ok]))})
-        score_df = pd.DataFrame(rows).sort_values("RMSE").round(2)
-        st.success(f"Best model by RMSE: **{score_df.iloc[0]['Model']}**")
-        a, b = st.columns([1, 1])
-        a.dataframe(score_df, use_container_width=True)
-        b.plotly_chart(px.bar(score_df, x="Model", y=["MAE", "RMSE"], barmode="group",
-                              title="Forecast error (lower is better)"),
-                       use_container_width=True)
-
-        show = st.multiselect("Models to plot", list(preds.keys()),
-                              default=list(preds.keys())[:1] + list(preds.keys())[-1:])
-        fig = go.Figure()
-        fig.add_trace(go.Scatter(x=test.index, y=test.values, name="Actual",
-                                 line=dict(color="black")))
-        for name in show:
-            fig.add_trace(go.Scatter(x=preds[name].index, y=preds[name].values, name=name))
-        fig.update_layout(title="Forecast vs actual (test period)")
-        st.plotly_chart(fig, use_container_width=True)
-        st.caption("Moving Average is one-step-ahead (each day is predicted from the "
-                   "previous days), while Exponential Smoothing and Holt-Winters forecast "
-                   "the whole test period at once, which is harder. Keep this in mind "
-                   "when comparing them.")
-        st.divider()
-
-        # ---- step 5 ----
-        st.subheader("Step 5: Increasing and decreasing periods")
-        mon = daily_s.resample("MS").sum().reset_index()
-        mon.columns = ["Month", "Demand"]
-        mon["Change %"] = mon["Demand"].pct_change().mul(100).round(1)
-        mon["Direction"] = np.where(mon["Change %"] >= 0, "Increase", "Decrease")
-        mon["Month"] = mon["Month"].dt.strftime("%Y-%m")
-        mc = mon.dropna()
-        st.plotly_chart(px.bar(mc, x="Month", y="Change %", color="Direction",
-                               color_discrete_map={"Increase": "green", "Decrease": "red"},
-                               title="Month-on-month change in total demand (%)"),
-                        use_container_width=True)
-        if not mc.empty:
-            up, dn = mc.loc[mc["Change %"].idxmax()], mc.loc[mc["Change %"].idxmin()]
-            st.markdown(f"- Biggest increase: **{up['Month']}** ({up['Change %']:+.1f}%)\n"
-                        f"- Biggest decrease: **{dn['Month']}** ({dn['Change %']:+.1f}%)")
-        st.caption("The first and last months may be partial months.")
-        st.divider()
-
-        # ---- step 6 ----
-        st.subheader("Step 6: Future demand forecast")
-        horizon = st.slider("Forecast horizon (days)", 7, 60, 14)
-        try:
-            final = ExponentialSmoothing(daily_s, trend="add", seasonal="add",
-                                         seasonal_periods=7).fit()
-            label = "Holt-Winters"
-        except Exception:
-            final = SimpleExpSmoothing(daily_s).fit()
-            label = "Simple Exp Smoothing"
-        fc = final.forecast(horizon)
-        fig = go.Figure()
-        fig.add_trace(go.Scatter(x=daily_s.tail(90).index, y=daily_s.tail(90).values,
-                                 name="Actual (last 90 days)"))
-        fig.add_trace(go.Scatter(x=fc.index, y=fc.values, name=f"{label} forecast",
-                                 line=dict(dash="dash", color="red")))
-        fig.update_layout(title=f"{horizon}-day demand forecast")
-        st.plotly_chart(fig, use_container_width=True)
-        st.caption(f"Forecast average: {fc.mean():,.0f} per day, compared with "
-                   f"{daily_s.tail(14).mean():,.0f} per day over the last 14 days. "
-                   f"Forecasts get less reliable the further ahead they go.")
-        # ====================== DATA EXPLORE ======================
+# ====================== DATA EXPLORE ======================
 with tab_d:
     st.header("Data Explore")
     st.markdown(
@@ -883,21 +714,17 @@ with tab_m:
             "ROC_AUC", ascending=False).iloc[0]
         summary.append({"Task": "Classification (High/Normal)", "Best model": r["Model"],
                         "Key metrics": f"ROC-AUC {r['ROC_AUC']:.3f}, F1 {r['F1']:.3f}, Accuracy {r['Accuracy']:.3f}"})
-    if (RES / "timeseries_results.csv").exists():
-        r = pd.read_csv(RES / "timeseries_results.csv").sort_values("RMSE").iloc[0]
-        summary.append({"Task": "Time Series (Daily demand)", "Best model": r["Model"],
-                        "Key metrics": f"RMSE {r['RMSE']:.2f}, MAE {r['MAE']:.2f}"})
     if summary:
         st.dataframe(pd.DataFrame(summary), use_container_width=True, hide_index=True)
     else:
         st.info("No result files found in results/.")
     st.caption("Regression and classification use a time-based split (first 80% "
-               "train, last 20% test). Time series results use the last 20% of days.")
+               "train, last 20% test).")
     st.divider()
 
     # ---- 2. full comparison ----
     st.subheader("2. Full model comparison")
-    t1, t2, t3 = st.tabs(["Regression", "Classification", "Time Series"])
+    t1, t2 = st.tabs(["Regression", "Classification"])
     with t1:
         p = RES / "regression_results.csv"
         if p.exists():
@@ -920,17 +747,6 @@ with tab_m:
                             use_container_width=True)
             st.caption("The top models are very close, so differences of 0.01 are "
                        "small. Classes are about 50/50, so no oversampling was needed.")
-    with t3:
-        p = RES / "timeseries_results.csv"
-        if p.exists():
-            tr = pd.read_csv(p).sort_values("RMSE")
-            st.dataframe(tr, use_container_width=True, hide_index=True)
-            st.plotly_chart(px.bar(tr, x="Model", y=["MAE", "RMSE"], barmode="group",
-                                   title="Forecast error (lower is better)"),
-                            use_container_width=True)
-            st.caption("Moving Average is one-step-ahead, while Exponential Smoothing "
-                       "and Holt-Winters forecast the whole test period at once, so "
-                       "the comparison favors Moving Average.")
     st.divider()
 
     # ---- 3. feature importance ----
